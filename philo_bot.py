@@ -44,6 +44,22 @@ def get_random_image_path():
     folder = "images"
     files = [f for f in os.listdir(folder) if f.endswith(('.png', '.jpg', '.jpeg'))]
     return os.path.join(folder, random.choice(files)) if files else None
+def download_photo(file_id):
+    file_info = requests.get(
+        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getFile?file_id={file_id}"
+    ).json()
+
+    file_path = file_info["result"]["file_path"]
+    file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
+
+    os.makedirs("images", exist_ok=True)
+    local_filename = os.path.join("images", os.path.basename(file_path))
+
+    response = requests.get(file_url)
+    with open(local_filename, "wb") as f:
+        f.write(response.content)
+
+    return local_filename
 
 def send_message(chat_id, text):
     # Сначала отправляем текст с кнопками
@@ -81,6 +97,11 @@ def webhook():
 
     data = request.json
     if "message" in data:
+if "photo" in message:
+    file_id = message["photo"][-1]["file_id"]
+    saved_path = download_photo(file_id)
+    send_message(chat_id, f"✅ Фото сохранено в архив: {saved_path}")
+    return "ok"
         send_message(data["message"]["chat"]["id"], get_philosophy_drop())
     elif "callback_query" in data:
         query = data["callback_query"]
