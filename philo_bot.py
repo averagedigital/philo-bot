@@ -1,3 +1,5 @@
+import random
+import os
 from dotenv import load_dotenv
 load_dotenv ()
 import os
@@ -38,9 +40,14 @@ def get_philosophy_drop(detailed=False):
         ]
     )
     return response.choices[0].message.content.strip()
+def get_random_image_path():
+    folder = "images"
+    files = [f for f in os.listdir(folder) if f.endswith(('.png', '.jpg', '.jpeg'))]
+    return os.path.join(folder, random.choice(files)) if files else None
 
 def send_message(chat_id, text):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    # Сначала отправляем текст с кнопками
+    url_text = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     buttons = {
         "inline_keyboard": [
             [
@@ -49,8 +56,23 @@ def send_message(chat_id, text):
             ]
         ]
     }
-    payload = {"chat_id": chat_id, "text": text, "reply_markup": buttons}
-    return requests.post(url, json=payload)
+    payload_text = {
+        "chat_id": chat_id,
+        "text": text,
+        "reply_markup": buttons
+    }
+    requests.post(url_text, json=payload_text)
+
+    # Затем отправляем случайное изображение (если есть)
+    image_path = get_random_image_path()
+    if image_path:
+        url_photo = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+        with open(image_path, 'rb') as photo:
+            payload_photo = {
+                "chat_id": chat_id
+            }
+            files = {"photo": photo}
+            requests.post(url_photo, data=payload_photo, files=files)
 
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 def webhook():
