@@ -96,13 +96,18 @@ def webhook():
     print(request.json)
 
     data = request.json
+
     if "message" in data:
-    if "photo" in message:
-    file_id = message["photo"][-1]["file_id"]
-    saved_path = download_photo(file_id)
-    send_message(chat_id, f"✅ Фото сохранено в архив: {saved_path}")
-    return "ok"
-        send_message(data["message"]["chat"]["id"], get_philosophy_drop())
+        message = data["message"]
+        chat_id = message["chat"]["id"]
+
+        if "photo" in message:
+            file_id = message["photo"][-1]["file_id"]
+            saved_path = download_photo(file_id)
+            send_message(chat_id, f"✅ Фото сохранено в архив: {saved_path}")
+        else:
+            send_message(chat_id, get_philosophy_drop())
+
     elif "callback_query" in data:
         query = data["callback_query"]
         cid = query["message"]["chat"]["id"]
@@ -111,6 +116,7 @@ def webhook():
             send_message(cid, get_philosophy_drop())
         elif callback == "detail":
             send_message(cid, get_philosophy_drop(detailed=True))
+
     return "ok"
 
 # Запускаем Flask
