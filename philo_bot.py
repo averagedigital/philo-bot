@@ -97,7 +97,7 @@ def webhook():
 
     data = request.json
     if "message" in data:
-if "photo" in message:
+    if "photo" in message:
     file_id = message["photo"][-1]["file_id"]
     saved_path = download_photo(file_id)
     send_message(chat_id, f"✅ Фото сохранено в архив: {saved_path}")
