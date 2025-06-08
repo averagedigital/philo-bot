@@ -186,10 +186,9 @@ def webhook():
                 send_message(cid, get_philosophy_drop(detailed=True))
 
         return "ok"
-    
+
     except Exception as e:
         print("❌ Ошибка в webhook():", e)
         return "error", 500
-    return "Broadcast sent", 200
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
