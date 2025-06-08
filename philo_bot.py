@@ -11,20 +11,19 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# Google Drive папка (указан твой ID)
+# Google Drive: ID папки и инициализация
 GOOGLE_DRIVE_FOLDER_ID = '1tN21ABCNrFNo4PIRN7ROp8pW_EYIlmoO'
-
-# Инициализация Google Drive
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
-# Загрузка переменных окружения
+# Переменные окружения
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
+BROADCAST_TOKEN = os.getenv("BROADCAST_TOKEN")
 
 app = Flask(__name__)
 
@@ -62,7 +61,6 @@ def get_random_drive_image_link(folder_id):
     file = random.choice(files)
     file_id = file["id"]
 
-    # Делает файл общедоступным
     drive_service.permissions().create(
         fileId=file_id,
         body={"role": "reader", "type": "anyone"},
@@ -91,8 +89,7 @@ def download_photo(file_id):
     file_path = file_info["result"]["file_path"]
     file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
 
-    os.makedirs("images", exist_ok=True)
-    saved_path = os.path.join("images", os.path.basename(file_path))
+    saved_path = os.path.join("/tmp", os.path.basename(file_path))  # временная папка
 
     response = requests.get(file_url)
     with open(saved_path, "wb") as f:
@@ -132,11 +129,7 @@ def send_message(chat_id, text):
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 def webhook():
     try:
-        print("📥 Запрос от Telegram:")
-        print(request.json)
-
         data = request.json
-
         if "message" in data:
             message = data["message"]
             chat_id = message["chat"]["id"]
@@ -166,17 +159,16 @@ def webhook():
 @app.route("/broadcast", methods=["GET"])
 def broadcast():
     token = request.args.get("token")
-    if token != os.getenv("BROADCAST_TOKEN"):
-        print("⛔ Неверный токен, доступ запрещён")
+    if token != BROADCAST_TOKEN:
         return "Forbidden", 403
 
     try:
-        print("🔥 BROADCAST ЗАПУЩЕН")
         message = get_philosophy_drop()
         send_message(CHAT_ID, message)
         return "Broadcast sent", 200
     except Exception as e:
         print("❌ Ошибка в broadcast():", e)
         return "error", 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
