@@ -165,13 +165,18 @@ def webhook():
 
 @app.route("/broadcast", methods=["GET"])
 def broadcast():
+    token = request.args.get("token")
+    if token != os.getenv("BROADCAST_TOKEN"):
+        print("⛔ Неверный токен, доступ запрещён")
+        return "Forbidden", 403
+
     try:
+        print("🔥 BROADCAST ЗАПУЩЕН")
         message = get_philosophy_drop()
         send_message(CHAT_ID, message)
         return "Broadcast sent", 200
     except Exception as e:
         print("❌ Ошибка в broadcast():", e)
         return "error", 500
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
