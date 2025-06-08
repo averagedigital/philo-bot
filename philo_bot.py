@@ -131,34 +131,6 @@ def send_message(chat_id, text):
 
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 def webhook():
-    print("📥 Запрос от Telegram:")
-    print(request.json)
-
-    data = request.json
-
-    if "message" in data:
-        message = data["message"]
-        chat_id = message["chat"]["id"]
-
-        if "photo" in message:
-            file_id = message["photo"][-1]["file_id"]
-            saved_path = download_photo(file_id)
-            send_message(chat_id, f"✅ Фото сохранено в архив: {saved_path}")
-        else:
-            send_message(chat_id, get_philosophy_drop())
-
-    elif "callback_query" in data:
-        query = data["callback_query"]
-        cid = query["message"]["chat"]["id"]
-        callback = query["data"]
-        if callback == "refresh":
-            send_message(cid, get_philosophy_drop())
-        elif callback == "detail":
-            send_message(cid, get_philosophy_drop(detailed=True))
-
-    return "ok"
-@app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
-def webhook():
     try:
         print("📥 Запрос от Telegram:")
         print(request.json)
@@ -190,5 +162,16 @@ def webhook():
     except Exception as e:
         print("❌ Ошибка в webhook():", e)
         return "error", 500
+
+@app.route("/broadcast", methods=["GET"])
+def broadcast():
+    try:
+        message = get_philosophy_drop()
+        send_message(CHAT_ID, message)
+        return "Broadcast sent", 200
+    except Exception as e:
+        print("❌ Ошибка в broadcast():", e)
+        return "error", 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
